@@ -1,0 +1,33 @@
+type Item @embedded {
+  value: Int!
+  timestamp: Time
+}
+
+input ItemInput {
+  value: Int!
+  timestamp: Time
+}
+
+type Entry {
+  heartRate: [Item]!
+  steps: [Item]!
+  date: Time
+}
+
+input EntryInput {
+  heartRate: [ItemInput]
+  steps: [ItemInput]
+  date: Time
+}
+
+type Query {
+  allEntries: [Entry!]
+  allEntriesSortedByDate: [Entry!]
+    @resolver(name: "all_entries_sorted_by_date", paginated: true)
+  entryByDate(date: Time!): [Entry]
+}
+
+type Mutation {
+  addEntry(entries: [EntryInput]): [Entry]
+    @resolver(name: "add_entry", paginated: false)
+}
