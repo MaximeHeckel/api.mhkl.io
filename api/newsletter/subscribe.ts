@@ -23,7 +23,7 @@ export const subscribe = async (url: string, email: string) => {
       source: "subscribe_page",
       email,
     });
-    console.log(`${res.status} subscribed ${email}`);
+    console.log(`${res.status} subscribed ${email} to ${subscriptionURL}`);
   } catch (error) {
     throw new Error(error);
   }
@@ -46,7 +46,7 @@ const handler = async (
     return res.status(500).json({ error });
   }
 
-  return res.status(200).json({});
+  return res.status(200).json({ response: "subscribed!" });
 };
 
 export default handler;
