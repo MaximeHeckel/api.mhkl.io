@@ -38,8 +38,8 @@ const handler = async (
   req: NowRequest,
   res: NowResponse
 ): Promise<NowResponse> => {
-  const { email } = req.body;
-
+  const { email } = JSON.parse(req.body);
+  console.log(`Received subscription request for ${email}`);
   try {
     await subscribe(subscriptionURL, email);
   } catch (error) {
