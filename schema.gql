@@ -8,15 +8,41 @@ input ItemInput {
   timestamp: Time
 }
 
+type Activity @embedded {
+  exercise: Int!
+  exerciseGoal: Int!
+  exerciseProgress: Int!
+  move: Int!
+  moveGoal: Int!
+  moveProgress: Int!
+  stand: Int!
+  standGoal: Int!
+  standProgress: Int!
+}
+
+input ActivityInput {
+  exercise: Int!
+  exerciseGoal: Int!
+  exerciseProgress: Int!
+  move: Int!
+  moveGoal: Int!
+  moveProgress: Int!
+  stand: Int!
+  standGoal: Int!
+  standProgress: Int!
+}
+
 type Entry {
   heartRate: [Item]!
   steps: [Item]!
+  activity: Activity
   date: Time
 }
 
 input EntryInput {
   heartRate: [ItemInput]
   steps: [ItemInput]
+  activity: ActivityInput
   date: Time
 }
 

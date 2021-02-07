@@ -59,7 +59,12 @@ const handler = async (
   /**
    * Destructure the body of the request based on the payload defined in the shortcut
    */
-  const { heart, steps, date: deviceDate } = req.body as NowRequestBody;
+  const {
+    activity,
+    heart,
+    steps,
+    date: deviceDate,
+  } = req.body as NowRequestBody;
 
   /**
    * Format the steps data
@@ -77,6 +82,7 @@ const handler = async (
   const formattedHeartData = formathealthSample(heart);
   console.info(`Heart Rate: ${formattedHeartData.length} items`);
 
+  console.info(`Current Activity Ring data: ${JSON.stringify(activity)}`);
   /**
    * Variable "today" is a date set based on the device date at midninight
    * This will be used as way to timestamp our documents in the database
@@ -84,6 +90,7 @@ const handler = async (
   const today = new Date(`${deviceDate}T00:00:00.000Z`);
 
   const entry = {
+    activity,
     heartRate: formattedHeartData,
     steps: formattedStepsData,
     date: today.toISOString(),
@@ -92,6 +99,17 @@ const handler = async (
   const mutation = gql`
     mutation($entries: [EntryInput]) {
       addEntry(entries: $entries) {
+        activity {
+          exercise
+          exerciseGoal
+          exerciseProgress
+          move
+          moveGoal
+          moveProgress
+          stand
+          standGoal
+          standProgress
+        }
         heartRate {
           value
           timestamp
@@ -109,9 +127,7 @@ const handler = async (
     await graphQLClient.request(mutation, {
       entries: [entry],
     });
-    console.info(
-      "Successfully transfered heart rate and steps data to database"
-    );
+    console.info("Successfully transfered health data to database");
   } catch (error) {
     console.error(error);
     return res.status(500).json({ response: error.response.errors[0].message });
