@@ -2,51 +2,65 @@ import { NowRequest, NowResponse } from "@now/node";
 import axios from "axios";
 
 /**
- * This pulls the subscription URL defined as an environment variable
+ * Pull BUTTONDOWN_API_KEY secret from env
  */
-const { SUBSCRIPTION_URL: subscriptionURL } = process.env;
+const { BUTTONDOWN_API_KEY } = process.env;
 
 /**
- * Queries the substack API
- * Sends the email to the substack subscribe API for the publication specified in the url option
- * @param {string} url the URL of the publication
- * @param {string} email the email that needs to be added as a subscriber to the newsletter
+ * Pass the BUTTONDOWN_API_KEY to the Authorization header
  */
-export const subscribe = async (url: string, email: string) => {
-  try {
-    const res = await axios.post(`${url}/api/v1/free`, {
-      first_url: `${url}/subscribe`,
-      first_referrer: "",
-      current_url: `${url}/subscribe`,
-      current_referrer: "",
-      referral_code: "",
-      source: "subscribe_page",
-      email,
-    });
-    console.log(`${res.status} subscribed ${email} to ${subscriptionURL}`);
-  } catch (error) {
-    throw new Error(error);
-  }
+const headers = {
+  Authorization: `Token ${BUTTONDOWN_API_KEY}`,
+  "Content-Type": "application/json",
 };
 
 /**
- * The handler of serverless function
+ * This function calls the Buttondown API subscription endpoint to subscribe the email passed
+ * in the argument to my newsletter.
+ * @param {string} email The email to send to the Buttondown API subscription endpoint
+ */
+const subscribe = async (email: string) =>
+  axios.post(
+    "https://api.buttondown.email/v1/subscribers",
+    {
+      email,
+      tags: ["blog.maximeheckel.com"],
+    },
+    {
+      headers,
+    }
+  );
+
+/**
+ * The handler of serverless function. It takes care of validation (whether the email is present) and
+ * also errors (if the user is already subscribed or if there's any other unknown error while subscribing).
  * @param {NowRequest} req
  * @param {NowResponse} res
  */
-const handler = async (
-  req: NowRequest,
-  res: NowResponse
-): Promise<NowResponse> => {
-  const { email } = JSON.parse(req.body);
-  console.log(`Received subscription request for ${email}`);
-  try {
-    await subscribe(subscriptionURL, email);
-  } catch (error) {
-    return res.status(500).json({ error });
+const handler = async (req: NowRequest, res: NowResponse) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
   }
 
-  return res.status(200).json({ response: "subscribed!" });
+  try {
+    await subscribe(email);
+  } catch (error) {
+    if (
+      error.response.data &&
+      error.response.data.length > 0 &&
+      error.response.data[0].includes("already subscribed")
+    ) {
+      return res
+        .status(400)
+        .json({ error: "Looks like you already subscribed to my newsletter!" });
+    }
+
+    return res.status(400).json({ error: error.message || error.toString() });
+  }
+
+  return res.status(200).json({ response: "subscribed!", error: "" });
 };
 
 export default handler;
