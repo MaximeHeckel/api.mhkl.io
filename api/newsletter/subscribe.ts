@@ -1,6 +1,27 @@
 import { NowRequest, NowResponse } from "@now/node";
 import axios from "axios";
 
+const allowCors = (fn: Function) => async (
+  req: NowRequest,
+  res: NowResponse
+) => {
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET,OPTIONS,PATCH,DELETE,POST,PUT"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+  );
+  if (req.method === "OPTIONS") {
+    res.status(200).end();
+    return;
+  }
+  return await fn(req, res);
+};
+
 /**
  * Pull BUTTONDOWN_API_KEY secret from env
  */
@@ -38,8 +59,12 @@ const subscribe = async (email: string) =>
  * @param {NowResponse} res
  */
 const handler = async (req: NowRequest, res: NowResponse) => {
+  if (req.method === "OPTIONS") {
+    return res.status(200);
+  }
+
   try {
-    const { email } = JSON.parse(req.body);
+    const { email } = req.body;
 
     if (!email) {
       return res.status(400).json({ error: "Email is required" });
@@ -47,8 +72,9 @@ const handler = async (req: NowRequest, res: NowResponse) => {
 
     await subscribe(email);
   } catch (error) {
-    console.error(error);
+    console.error(error?.response?.data ?? error?.message);
     if (
+      error.response &&
       error.response.data &&
       error.response.data.length > 0 &&
       error.response.data[0].includes("already subscribed")
@@ -64,4 +90,4 @@ const handler = async (req: NowRequest, res: NowResponse) => {
   return res.status(200).json({ response: "subscribed!", error: "" });
 };
 
-export default handler;
+export default allowCors(handler);
