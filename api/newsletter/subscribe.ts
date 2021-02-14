@@ -38,15 +38,16 @@ const subscribe = async (email: string) =>
  * @param {NowResponse} res
  */
 const handler = async (req: NowRequest, res: NowResponse) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ error: "Email is required" });
-  }
-
   try {
+    const { email } = JSON.parse(req.body);
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
     await subscribe(email);
   } catch (error) {
+    console.error(error);
     if (
       error.response.data &&
       error.response.data.length > 0 &&
