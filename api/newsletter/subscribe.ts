@@ -5,7 +5,8 @@ const allowCors = (fn: Function) => async (
   req: NowRequest,
   res: NowResponse
 ) => {
-  res.setHeader("Access-Control-Allow-Credentials", "true");
+  // @ts-ignore
+  res.setHeader("Access-Control-Allow-Credentials", true);
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Methods",
@@ -59,12 +60,9 @@ const subscribe = async (email: string) =>
  * @param {NowResponse} res
  */
 const handler = async (req: NowRequest, res: NowResponse) => {
-  if (req.method === "OPTIONS") {
-    return res.status(200);
-  }
-
   try {
     const { email } = req.body;
+    console.log(`Incoming subscription request for ${email}`);
 
     if (!email) {
       return res.status(400).json({ error: "Email is required" });
@@ -72,7 +70,9 @@ const handler = async (req: NowRequest, res: NowResponse) => {
 
     await subscribe(email);
   } catch (error) {
-    console.error(error?.response?.data ?? error?.message);
+    console.error(
+      (error && error.response && error.response.data) || error.message
+    );
     if (
       error.response &&
       error.response.data &&
